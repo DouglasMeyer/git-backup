@@ -4,66 +4,93 @@ require 'tmpdir'
 require 'pathname'
 
 class GitBackup
+  DefaultOptions = {
+    :config     => true,
+    :hooks      => true,
+    :branches   => true,
+    :cahced     => true,
+    :changes    => true,
+    :untracked  => false,
+    :ignored    => false,
+    :stashed    => true,
+    :submodules => false
+  }
+  Usage = %Q|
+Usage:
+git-backup [file.tar]
+Creates a backup of the git repo.
+If the repo does not have remove branches; git-backup will copy the project, run garbage-collection, capture changes in submodules, then tar the results.
+If the repo has remote branches, git-backup will create a tar file with the following contents:
+.git/
+  config
+  hooks/              (skip with --skip-hooks)
+branch_name/          (skip with --skip-branches)
+  patches till they meet with a remote branch
+cached_changes.patch  (skip with --skip-cached)
+changes.patch         (skip with --skip-changes)
+untracked.tar         (skipped by default, include with --untracked)
+ignored.tar           (skipped by default, include with --ignored)
+stashed changes       (skip with --skip-stashed)
+submodule/path/       (skipped by default, include with --submodules)
+  same thing as a .git directory
+
+--all will include all changes.
+|
   def self.run
     source = Pathname('.')
     file = Pathname(Dir.pwd).basename.to_s + '.tar'
+    file = ARGV.pop if ARGV.length > 0 && !(ARGV.last =~ /^-/)
+    file = Pathname(file)
     show_usage = false
+    options = DefaultOptions
     while arg = ARGV.pop
-      case arg
-      when "--help", "-h"
+      key = arg.sub(/--(skip-)?/,'').to_sym
+      if %w(--help -h).include? arg
         show_usage = true
+      elsif options.keys.include?(key)
+        if arg =~ /^--skip/
+          options[key] = false
+        else
+          options[key] = true
+        end
+      elsif arg == '--all'
+        options.keys.each { |key| options[key] = true }
       else
         puts "Unknown argument #{arg}"
         show_usage = true
       end
     end
     if show_usage
-      puts <<-%Q(
-Usage:
-git-backup file.tar
-Creates a backup of the git repo.
-If the repo does not have remove branches; git-backup will copy the project, run garbage-collection, capture changes in submodules, then tar the results.
-If the repo has remote branches, git-backup will create a tar file with the following contents:
-.git/
-  config
-  hooks/
-branch_name/
-  patches till they meet a remote branch
-cached_changes.patch
-changes.patch
-untracked.tar
-ignored.tar
-staged changes
-submodule/path/
-  same thing as a .git directory
-)
-exit 0
+      puts Usage
+      exit 0
     end
-    Dir.mktmpdir("git-backup#{source.expand_path.to_s.gsub(/\//, '_')}-#{file} ") do |tmpdir|
-      puts "Backing-up to #{file}"
-      self.new(source, tmpdir)
+    Dir.mktmpdir("git-backup#{source.expand_path.to_s.gsub(/\//, '_')} ") do |tmpdir|
+      puts "Backing-up to #{file.basename}"
+      self.new(source, tmpdir, options)
 
-      %x(cd "#{tmpdir}" && tar cf "#{file}" * .git)
-      %x(mv "#{tmpdir}/#{file}" ./)
+      %x(cd "#{tmpdir}" && tar cf tmp.tar * .git)
+      %x(mv "#{tmpdir}/tmp.tar" "#{file}")
     end
   end
 
-  def initialize backup_source, tmpdir
+  def initialize backup_source, tmpdir, options
     @tmpdir = tmpdir
+    @options = options
     Dir.chdir(backup_source) do
       if has_remote?
         backup_configuration
-        backup_branches
-        backup_cached_changes
-        backup_changes
-        backup_untracked_files
-        backup_ignored_files
-        backup_stashes
+        backup_hooks            if options[:hooks]
+        backup_branches         if options[:branches]
+        backup_cached_changes   if options[:cached]
+        backup_changes          if options[:changes]
+        backup_untracked_files  if options[:untracked]
+        backup_ignored_files    if options[:ignored]
+        backup_stashes          if options[:stashed]
       else
         backup_project
         garbage_collect
       end
-      backup_submodules
+      backup_submodules         if options[:submodules]
     end
   end
 
@@ -72,8 +99,11 @@ exit 0
   end
 
   def backup_configuration
-    %x(mkdir "#{@tmpdir}/.git")
+    %x(mkdir -p "#{@tmpdir}/.git")
     %x(cp .git/config "#{@tmpdir}/.git/")
+  end
+
+  def backup_hooks
     %x(cp -R .git/hooks "#{@tmpdir}/.git/")
   end
 
@@ -142,7 +172,7 @@ exit 0
       submodule_path = submodule.split(' ')[1]
       submodule_tmp_path = "#{@tmpdir}/#{submodule_path}"
       %x(mkdir -p "#{submodule_tmp_path}")
-      self.class.new submodule_path, submodule_tmp_path
+      self.class.new submodule_path, submodule_tmp_path, @options
 #NOTE: I'm assuming if there is only .git/config and .git/hooks/*.sample that nothing has changed.
       if %x(cd "#{submodule_tmp_path}" && find) == %Q(.
 ./.git
