@@ -8,7 +8,7 @@ class GitBackup
     :config     => true,
     :hooks      => true,
     :branches   => true,
-    :cahced     => true,
+    :cached     => true,
     :changes    => true,
     :untracked  => false,
     :ignored    => false,
