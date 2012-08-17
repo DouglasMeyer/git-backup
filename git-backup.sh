@@ -9,13 +9,14 @@ usage() {
   echo "Usage: $0 [options...]"
   echo "Options:"
 
+#TODO: is it possible to allow this to be any argument?
   echo "  --no-default       - Don't include default options (needs to be first argument)."
 
   echo "  --config (default) - Include config (./.git/) files in backup."
   echo "  --no-config        - Don't include such files in backup."
 
   echo "  --hooks (default)  - Include hooks (./.git/hooks) files in backup."
-#  echo "  --no-config        - Don't include such files in backup."
+  echo "  --no-hooks"
 }
 
 usage=
