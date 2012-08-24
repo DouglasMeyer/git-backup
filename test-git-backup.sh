@@ -40,6 +40,11 @@ echo "First update" > first_file
 git add first_file
 git commit -m "First update" >/dev/null
 
+git checkout -b my_branch &>/dev/null
+echo "A branch" > first_file
+git add first_file
+git commit -m "A branch" >/dev/null
+
 setup() {
   rm -rf "$output_path"
   cd "$build_path/${1-remote}_project"
@@ -82,6 +87,8 @@ tar xvf ../remote_project/remote_project.tar >/dev/null
 assert $? "$LINENO: $output_path/.git/config should not exist"
 [ ! -d "$output_path/.git/hooks" ]
 assert $? "$LINENO: $output_path/.git/hooks should not exist"
+[ -d "$output_path/my_branch" ]
+assert $? "$LINENO: $output_path/my_branch should exist"
 
 
 # Test --hooks includes hooks
@@ -100,6 +107,29 @@ cd "$output_path"
 tar xvf ../remote_project/remote_project.tar >/dev/null
 [ ! -d "$output_path/.git/hooks" ]
 assert $? "$LINENO: $output_path/.git/hooks should not exist"
+
+
+# Test --branches includes local branches
+setup
+$backup_cmd --branches
+cd "$output_path"
+tar xvf ../remote_project/remote_project.tar >/dev/null
+[ -d "$output_path/my_branch" ]
+assert $? "$LINENO: $output_path/my_branch should exist"
+mkdir "$output_path/branch_test"
+cd "$build_path/remote_project"
+git format-patch --output-directory "${output_path}/branch_test" "master..my_branch" >/dev/null
+diff "${output_path}/branch_test" "$output_path/my_branch"
+assert $? "$LINENO: $output_path/my_branch should be the same as ${output_path}/branch_test"
+
+
+# Test --no-branches includes local branches
+setup
+$backup_cmd --no-branches
+cd "$output_path"
+tar xvf ../remote_project/remote_project.tar >/dev/null
+[ ! -d "$output_path/my_branch" ]
+assert $? "$LINENO: $output_path/my_branch should not exist"
 
 
 # clean test files

@@ -10,13 +10,16 @@ usage() {
   echo "Options:"
 
 #TODO: is it possible to allow this to be any argument?
-  echo "  --no-default       - Don't include default options (needs to be first argument)."
+  echo "  --no-default         - Don't include default options (needs to be first argument)."
 
-  echo "  --config (default) - Include config (./.git/) files in backup."
-  echo "  --no-config        - Don't include such files in backup."
+  echo "  --config (default)   - Include config (./.git/) files in backup."
+  echo "  --no-config          - Don't include such files in backup."
 
-  echo "  --hooks (default)  - Include hooks (./.git/hooks) files in backup."
+  echo "  --hooks (default)    - Include hooks (./.git/hooks) files in backup."
   echo "  --no-hooks"
+
+  echo "  --branches (default) - Include local branches (upto commits stored remotely)."
+  echo "  --no-branches"
 }
 
 cleanup() {
@@ -27,6 +30,7 @@ cleanup() {
 usage=
 config=t
 hooks=t
+branches=t
 
 while [ $# -ne 0 ] ; do
   case $1 in
@@ -40,6 +44,8 @@ while [ $# -ne 0 ] ; do
   --no-config ) shift ; config= ;;
   --hooks ) shift ; hooks=t ;;
   --no-hooks ) shift ; hooks= ;;
+  --branches ) shift ; branches=t ;;
+  --no-branches ) shift ; branches= ;;
   * )
     echo "Unknown option \"$1\""
     echo
@@ -75,6 +81,24 @@ fi
 if [ $hooks ] ; then
   mkdir -p "$tmp_dir/.git"
   cp -r .git/hooks "$tmp_dir/.git/"
+fi
+
+if [ $branches ] ; then
+  for branch in `git branch | cut -c 3-` ; do
+    remote=$(git config --get "branch.${branch}.remote") || true
+    merge=$(git config --get "branch.${branch}.merge") || true
+    remote_branch=
+    if [ -z $remote -o -z $merge ] ; then
+      remote_branch="master"
+    else
+      remote_branch="${remote}/${merge##*/}"
+    fi
+    base=`git merge-base ${branch} ${remote_branch}`
+    if [ "$base" != `git rev-parse ${branch}` ] ; then
+      mkdir -p "$tmp_dir/$branch"
+      git format-patch --output-directory "${tmp_dir}/${branch}" "${base}..${branch}" >/dev/null
+    fi
+  done
 fi
 
 pushd "$tmp_dir" > /dev/null
