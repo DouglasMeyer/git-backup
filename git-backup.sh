@@ -19,6 +19,11 @@ usage() {
   echo "  --no-hooks"
 }
 
+cleanup() {
+  #TODO: This should be called even if the script fails
+  rm -rf "$tmp_dir"
+}
+
 usage=
 config=t
 hooks=t
@@ -54,6 +59,14 @@ backup_name=$(basename $backup_path)
 tar_file=${backup_name}.tar
 tmp_dir=$(mktemp --directory --tmpdir tmp.git-backup.$backup_name.XXXXX)
 
+if [ -z $(git remote) ] ; then
+  #git gc --aggressive #--prune=today
+  tar cf "${tmp_dir}/${tar_file}" .
+  mv "${tmp_dir}/${tar_file}" "${backup_path}/${tar_file}"
+  cleanup
+  exit 0
+fi
+
 if [ $config ] ; then
   mkdir -p "$tmp_dir/.git"
   cp .git/config "$tmp_dir/.git/"
@@ -68,5 +81,4 @@ pushd "$tmp_dir" > /dev/null
 tar cf "$backup_path/$tar_file" .
 popd > /dev/null
 
-#TODO: This should be called even if the script fails
-rm -rf "$tmp_dir"
+cleanup
