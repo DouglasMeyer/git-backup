@@ -1,5 +1,14 @@
 #!/bin/sh
 
+on_exit() {
+  # clean test files
+  rm -rf "$build_path"
+
+  # print counts
+  echo "$assertions assertions, $failures failures."
+}
+trap on_exit EXIT
+
 assertions=0
 failures=0
 assert() { # assertion, message
@@ -131,12 +140,6 @@ tar xvf ../remote_project/remote_project.tar >/dev/null
 [ ! -d "$output_path/my_branch" ]
 assert $? "$LINENO: $output_path/my_branch should not exist"
 
-
-# clean test files
-rm -rf "$build_path"
-
-# print counts
-echo "$assertions assertions, $failures failures."
 
 [ $failures -eq 0 ]
 exit $?
