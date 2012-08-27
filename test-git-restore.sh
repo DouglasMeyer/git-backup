@@ -14,6 +14,9 @@ on_exit() {
   echo "$assertions assertions, $failures failures."
   if [ "$status" -ne 0 ] ; then
     echo "Something went wrong in $0"
+  else
+    [ $failures -eq 0 ]
+    exit $?
   fi
 }
 trap on_exit EXIT
