@@ -29,15 +29,12 @@ Options:
 
   --ignored            - Include ignored files in backup.
   --no-ignored (default)"
-#TODO: is it possible for --no-default to be specified anywhere?
-#NOTE: do I want to backup submodule changes? I'm thinking no, because it is
-#      its own git project/directory.
 
 
 ### Script Support
     # Exit immediately if a command dosn't exit with 0
-        # Exit immediately if a variable isn't defined
-set -e #-u
+       # Exit immediately if a variable isn't defined
+set -e -u
 on_exit() {
   rm -rf "$tmp_dir"
 }
