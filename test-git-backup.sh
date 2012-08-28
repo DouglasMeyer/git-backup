@@ -69,6 +69,8 @@ git add first_file
 
 echo "Working Copy change" > first_file
 
+echo "Not tracked" > not_tracked
+
 setup() {
   rm -rf "$untar_path"
   mkdir "$untar_path"
@@ -105,6 +107,7 @@ assert $? "$LINENO: $untar_path/my_branch should not exist"
 assert $? "$LINENO: cached_changes.patch should not exist"
 [ -f changes.patch ]
 assert $? "$LINENO: changes.patch should exist"
+[ ! -f untracked.tar ] ; assert $? "$LINENO: untracked.tar should not exist"
 
 
 # Test --no-default doesn't incude defaults
@@ -120,6 +123,7 @@ assert $? "$LINENO: $untar_path/my_branch should not exist"
 assert $? "$LINENO: cached_changes.patch should not exist"
 [ ! -f changes.patch ]
 assert $? "$LINENO: changes.patch should not exist"
+[ ! -f untracked.tar ] ; assert $? "$LINENO: untracked.tar should not exist"
 
 
 # Test config gets backed-up
@@ -197,3 +201,18 @@ setup
 backup --no-changes
 [ ! -f changes.patch ]
 assert $? "$LINENO: changes.patch should not exist"
+
+
+# Test --untracked should include untracked files
+setup
+backup --untracked
+cd "$test_path/remote_project"
+tar cf untracked.tar not_tracked
+mv untracked.tar ..
+files_equal "$test_path/untracked.tar" "$untar_path/untracked.tar"
+
+
+# Test --no-untracked should not include untracked files
+setup
+backup --no-untracked
+[ ! -f untracked.tar ] ; assert $? "$LINENO: untracked.tar should not exist"

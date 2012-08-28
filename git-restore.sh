@@ -104,3 +104,9 @@ if [ -f changes.patch ] ; then
   git apply $tmp_dir/changes.patch
   cd "$tmp_dir"
 fi
+
+if [ -f untracked.tar ] ; then
+  cd "$backup_path"
+  tar xvf $tmp_dir/untracked.tar >/dev/null
+  cd "$tmp_dir"
+fi

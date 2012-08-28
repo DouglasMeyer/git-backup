@@ -18,7 +18,10 @@ Options:
   --no-cached
 
   --changes (default)  - Include working directory changes in backup.
-  --no-changes"
+  --no-changes
+
+  --untracked          - Include untracked files in backup.
+  --no-untracked (default)"
 #TODO: is it possible for --no-default to be specified anywhere?
 
 
@@ -39,6 +42,7 @@ hooks=t
 branches=t
 cached=t
 changes=t
+untracked=
 
 while [ $# -ne 0 ] ; do
   case $1 in
@@ -61,6 +65,8 @@ while [ $# -ne 0 ] ; do
   --no-cached ) shift ; cached= ;;
   --changes ) shift ; changes=t ;;
   --no-changes ) shift ; changes= ;;
+  --untracked ) shift ; untracked=t ;;
+  --no-untracked ) shift ; untracked= ;;
   * )
     echo "Unknown option \"$1\""
     echo
@@ -124,6 +130,10 @@ fi
 
 if [ $changes ] ; then
   git diff --binary > "$tmp_dir/changes.patch"
+fi
+
+if [ $untracked ] ; then
+  tar cf $tmp_dir/untracked.tar $(git clean --dry-run -d | sed "s/^Would remove //")
 fi
 
 pushd "$tmp_dir" > /dev/null

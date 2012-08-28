@@ -70,7 +70,9 @@ git add first_file
 
 echo "Working Copy content" > first_file
 
-$backup_cmd
+echo "Untracked content" > untracked_file
+
+$backup_cmd --untracked
 
 mkdir "$test_path/restore"; cd "$test_path/restore"
 $restore_cmd ../local_project/local_project.tar
@@ -118,3 +120,7 @@ assert $? "$LINENO: expecetd \"Cached content\" to be part of the cache"
 assert_equal "Working Copy content" "$(cat ./first_file)"
 git diff --cached | grep -v -q "Working Copy content"
 assert $? "$LINENO: expecetd \"Working Copy content\" to be part of the content"
+
+# Test untracked files get restored
+assert_equal "Untracked content" "$(cat ./untracked_file)"
+assert_equal "" "$(git show untracked_file)"
