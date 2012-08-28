@@ -105,13 +105,13 @@ files_equal "$test_path/tar_project.tar" "$test_path/local_project.tar"
 setup
 backup
 [ -e "$untar_path/.git/config" ]
-assert $? "$LINENO: $untar_path/.git/config should not exist"
+assert $? "$LINENO: $untar_path/.git/config should exist"
 [ -d "$untar_path/.git/hooks" ]
-assert $? "$LINENO: $untar_path/.git/hooks should not exist"
+assert $? "$LINENO: $untar_path/.git/hooks should exist"
 [ -d "$untar_path/my_branch" ]
-assert $? "$LINENO: $untar_path/my_branch should not exist"
+assert $? "$LINENO: $untar_path/my_branch should exist"
 [ -f cached_changes.patch ]
-assert $? "$LINENO: cached_changes.patch should not exist"
+assert $? "$LINENO: cached_changes.patch should exist"
 [ -f changes.patch ]
 assert $? "$LINENO: changes.patch should exist"
 [ ! -f untracked.tar ] ; assert $? "$LINENO: untracked.tar should not exist"
@@ -145,6 +145,25 @@ backup --config --no-default
 assert $? "$LINENO: $untar_path/.git/config should exist"
 [ ! -d "$untar_path/.git/hooks" ]
 assert $? "$LINENO: $untar_path/.git/hooks should not exist"
+
+
+# Test --all should include all options
+setup
+backup --all
+[ -e "$untar_path/.git/config" ]
+assert $? "$LINENO: $untar_path/.git/config should exist"
+[ -d "$untar_path/.git/hooks" ]
+assert $? "$LINENO: $untar_path/.git/hooks should exist"
+[ -d "$untar_path/my_branch" ]
+assert $? "$LINENO: $untar_path/my_branch should exist"
+[ -f cached_changes.patch ]
+assert $? "$LINENO: cached_changes.patch should exist"
+[ -f changes.patch ]
+assert $? "$LINENO: changes.patch should exist"
+[ -f untracked.tar ] ; assert $? "$LINENO: untracked.tar should exist"
+[ -f ignored.tar ] ; assert $? "$LINENO: ignored.tar should exist"
+cat "stash@{0}: On my_branch: My stash" | grep -q "diff --git a/first_file"
+assert $? "$LINENO: first_file should be stashed"
 
 
 # Test config gets backed-up

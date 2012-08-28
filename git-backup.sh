@@ -4,6 +4,7 @@ Usage: $0 [options...]
 Options:
 
   --no-default         - Don't include default options.
+  --all                - Will turn on all options.
 
   --config (default)   - Include config (./.git/) files in backup.
   --no-config          - Don't include such files in backup.
@@ -66,6 +67,16 @@ while [ $# -ne 0 ] ; do
   case $1 in
   --help | --usage ) shift ; usage=t ;;
   --no-default ) shift ;;
+  --all ) shift
+    config=t
+    hooks=t
+    branches=t
+    stashes=t
+    cached=t
+    changes=t
+    untracked=t
+    ignored=t
+    ;;
   --config ) shift ; config=t ;;
   --no-config ) shift ; config= ;;
   --hooks ) shift ; hooks=t ;;
