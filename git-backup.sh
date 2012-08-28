@@ -147,18 +147,30 @@ fi
 
 if [ $cached ] ; then
   git diff --cached --binary > "$tmp_dir/cached_changes.patch"
+  if [ -z "$(cat $tmp_dir/cached_changes.patch)" ] ; then
+    rm $tmp_dir/cached_changes.patch
+  fi
 fi
 
 if [ $changes ] ; then
   git diff --binary > "$tmp_dir/changes.patch"
+  if [ -z "$(cat $tmp_dir/changes.patch)" ] ; then
+    rm $tmp_dir/changes.patch
+  fi
 fi
 
 if [ $untracked ] ; then
-  tar cf $tmp_dir/untracked.tar $(git clean --dry-run -d | sed "s/^Would remove //")
+  untracked_files=$(git clean --dry-run -d | sed "s/^Would remove //")
+  if [ $untracked_files ] ; then
+    tar cf $tmp_dir/untracked.tar $untracked_files
+  fi
 fi
 
 if [ $ignored ] ; then
-  tar cf $tmp_dir/ignored.tar $(git clean --dry-run -d -X | sed "s/^Would remove //")
+  ignored_files=$(git clean --dry-run -d -X | sed "s/^Would remove //")
+  if [ $ignored_files ] ; then
+    tar cf $tmp_dir/ignored.tar $ignored_files
+  fi
 fi
 
 pushd "$tmp_dir" > /dev/null

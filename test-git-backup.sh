@@ -201,16 +201,32 @@ backup --no-cached
 assert $? "$LINENO: cached_changes.patch should not exist"
 
 
+# Test cached_changes.patch does not get created if there are no cached changes
+setup
+git reset HEAD first_file >/dev/null
+backup --cached
+[ ! -f cached_changes.patch ]
+assert $? "$LINENO: cached_changes.patch should not exist"
+
+
 # Test --changes should include working directory changes
 setup
 backup --changes
 cat changes.patch | grep -q "diff --git a/first_file"
-assert $? "$LINENO: first_file should be cached"
+assert $? "$LINENO: first_file unstashed changes should be saved"
 
 
 # Test --no-changes should not include working directory changes
 setup
 backup --no-changes
+[ ! -f changes.patch ]
+assert $? "$LINENO: changes.patch should not exist"
+
+
+# Test changes.patch does not get created if there are no changes
+setup
+git checkout first_file >/dev/null
+backup --changes
 [ ! -f changes.patch ]
 assert $? "$LINENO: changes.patch should not exist"
 
@@ -230,6 +246,13 @@ backup --no-untracked
 [ ! -f untracked.tar ] ; assert $? "$LINENO: untracked.tar should not exist"
 
 
+# Test untracked.tar doesn't get created if there are no untracked files
+setup
+rm not_tracked
+backup --untracked
+[ ! -f untracked.tar ] ; assert $? "$LINENO: untracked.tar should not exist"
+
+
 # Test --ignored should include files ignored by git
 setup
 backup --ignored
@@ -242,6 +265,13 @@ files_equal "$test_path/ignored.tar" "$untar_path/ignored.tar"
 # Test --no-ignored should not include files ignored by git
 setup
 backup --no-ignored
+[ ! -f ignored.tar ] ; assert $? "$LINENO: ignored.tar should not exist"
+
+
+# Test ignored.tar doesn't get created if there are no ignored files
+setup
+rm ignore_file
+backup --ignored
 [ ! -f ignored.tar ] ; assert $? "$LINENO: ignored.tar should not exist"
 
 
