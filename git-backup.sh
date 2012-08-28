@@ -3,7 +3,7 @@ usage_text="Git Backup, a tool to backup your git projects and not duplicate wha
 Usage: $0 [options...]
 Options:
 
-  --no-default         - Don't include default options (needs to be first argument).
+  --no-default         - Don't include default options.
 
   --config (default)   - Include config (./.git/) files in backup.
   --no-config          - Don't include such files in backup.
@@ -45,27 +45,27 @@ trap on_exit EXIT
 
 ### Script Options/Flags/Defaults
 usage=
-config=t
-hooks=t
-branches=t
-stashes=t
-cached=t
-changes=t
+config=
+hooks=
+branches=
+stashes=
+cached=
+changes=
 untracked=
 ignored=
+if [[ $* != *--no-default* ]] ; then
+  config=t
+  hooks=t
+  branches=t
+  stashes=t
+  cached=t
+  changes=t
+fi
 
 while [ $# -ne 0 ] ; do
   case $1 in
   --help | --usage ) shift ; usage=t ;;
-  --no-default )
-    shift
-    config=
-    hooks=
-    branches=
-    stashes=
-    cached=
-    changes=
-    ;;
+  --no-default ) shift ;;
   --config ) shift ; config=t ;;
   --no-config ) shift ; config= ;;
   --hooks ) shift ; hooks=t ;;

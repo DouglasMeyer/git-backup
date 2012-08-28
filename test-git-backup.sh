@@ -138,6 +138,15 @@ assert $? "$LINENO: changes.patch should not exist"
 [ ! -f stash@{?}:* ]; assert $? "$LINENO: there should be no stahsed changes"
 
 
+# Test --no-default doesn't have to be the first argument
+setup
+backup --config --no-default
+[ -e "$untar_path/.git/config" ]
+assert $? "$LINENO: $untar_path/.git/config should exist"
+[ ! -d "$untar_path/.git/hooks" ]
+assert $? "$LINENO: $untar_path/.git/hooks should not exist"
+
+
 # Test config gets backed-up
 setup
 backup --config
