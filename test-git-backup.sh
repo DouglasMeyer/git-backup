@@ -55,6 +55,9 @@ git commit -m "First commit" >/dev/null
 cd "$test_path"
 git clone local_project remote_project >/dev/null
 cd remote_project
+echo "Ignore me" > ignore_file
+echo "ignore_file" > .gitignore
+git add .gitignore
 echo "First update" > first_file
 git add first_file
 git commit -m "First update" >/dev/null
@@ -108,6 +111,7 @@ assert $? "$LINENO: cached_changes.patch should not exist"
 [ -f changes.patch ]
 assert $? "$LINENO: changes.patch should exist"
 [ ! -f untracked.tar ] ; assert $? "$LINENO: untracked.tar should not exist"
+[ ! -f ignored.tar ] ; assert $? "$LINENO: ignored.tar should not exist"
 
 
 # Test --no-default doesn't incude defaults
@@ -124,6 +128,7 @@ assert $? "$LINENO: cached_changes.patch should not exist"
 [ ! -f changes.patch ]
 assert $? "$LINENO: changes.patch should not exist"
 [ ! -f untracked.tar ] ; assert $? "$LINENO: untracked.tar should not exist"
+[ ! -f ignored.tar ] ; assert $? "$LINENO: ignored.tar should not exist"
 
 
 # Test config gets backed-up
@@ -216,3 +221,18 @@ files_equal "$test_path/untracked.tar" "$untar_path/untracked.tar"
 setup
 backup --no-untracked
 [ ! -f untracked.tar ] ; assert $? "$LINENO: untracked.tar should not exist"
+
+
+# Test --ignored should include files ignored by git
+setup
+backup --ignored
+cd "$test_path/remote_project"
+tar cf ignored.tar ignore_file
+mv ignored.tar ..
+files_equal "$test_path/ignored.tar" "$untar_path/ignored.tar"
+
+
+# Test --no-ignored should not include files ignored by git
+setup
+backup --no-ignored
+[ ! -f ignored.tar ] ; assert $? "$LINENO: ignored.tar should not exist"

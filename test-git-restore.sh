@@ -49,6 +49,7 @@ mkdir local_project; cd local_project
 git init >/dev/null
 echo "First content" > first_file
 git add first_file
+
 git commit -m "First commit" >/dev/null
 $backup_cmd
 
@@ -61,6 +62,10 @@ git config --add "apply.whitespace" "fix"
 echo "# My update script" > .git/hooks/update
 git checkout -b my_branch 2>/dev/null
 
+echo "Ignore me" > ignore_file
+echo "ignore_file" > .gitignore
+git add .gitignore
+
 echo "Branch content" > first_file
 git add first_file
 git commit -m "Branch commit" >/dev/null
@@ -72,7 +77,7 @@ echo "Working Copy content" > first_file
 
 echo "Untracked content" > untracked_file
 
-$backup_cmd --untracked
+$backup_cmd --untracked --ignored
 
 mkdir "$test_path/restore"; cd "$test_path/restore"
 $restore_cmd ../local_project/local_project.tar
@@ -124,3 +129,7 @@ assert $? "$LINENO: expecetd \"Working Copy content\" to be part of the content"
 # Test untracked files get restored
 assert_equal "Untracked content" "$(cat ./untracked_file)"
 assert_equal "" "$(git show untracked_file)"
+
+# Test ignored files get restored
+assert_equal "Ignore me" "$(cat ./ignore_file)"
+assert_equal "" "$(git show ignore_file)"

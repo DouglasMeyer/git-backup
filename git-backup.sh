@@ -21,7 +21,10 @@ Options:
   --no-changes
 
   --untracked          - Include untracked files in backup.
-  --no-untracked (default)"
+  --no-untracked (default)
+
+  --ignored            - Include ignored files in backup.
+  --no-ignored (default)"
 #TODO: is it possible for --no-default to be specified anywhere?
 
 
@@ -43,6 +46,7 @@ branches=t
 cached=t
 changes=t
 untracked=
+ignored=
 
 while [ $# -ne 0 ] ; do
   case $1 in
@@ -67,6 +71,8 @@ while [ $# -ne 0 ] ; do
   --no-changes ) shift ; changes= ;;
   --untracked ) shift ; untracked=t ;;
   --no-untracked ) shift ; untracked= ;;
+  --ignored ) shift ; ignored=t ;;
+  --no-ignored ) shift ; ignored= ;;
   * )
     echo "Unknown option \"$1\""
     echo
@@ -134,6 +140,10 @@ fi
 
 if [ $untracked ] ; then
   tar cf $tmp_dir/untracked.tar $(git clean --dry-run -d | sed "s/^Would remove //")
+fi
+
+if [ $ignored ] ; then
+  tar cf $tmp_dir/ignored.tar $(git clean --dry-run -d -X | sed "s/^Would remove //")
 fi
 
 pushd "$tmp_dir" > /dev/null

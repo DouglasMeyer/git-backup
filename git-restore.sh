@@ -110,3 +110,9 @@ if [ -f untracked.tar ] ; then
   tar xvf $tmp_dir/untracked.tar >/dev/null
   cd "$tmp_dir"
 fi
+
+if [ -f ignored.tar ] ; then
+  cd "$backup_path"
+  tar xvf $tmp_dir/ignored.tar >/dev/null
+  cd "$tmp_dir"
+fi
