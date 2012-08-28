@@ -71,7 +71,7 @@ while [ $# -ne 0 ] ; do
 done
 
 if [ $usage ] ; then
-  echo "${usage_text}"
+  echo "$usage_text"
   exit 2
 fi
 
@@ -79,13 +79,13 @@ fi
 ### Script Body
 backup_path=$(pwd)
 backup_name=$(basename $backup_path)
-tar_file=${backup_name}.tar
+tar_file=$backup_name.tar
 tmp_dir=$(mktemp --directory --tmpdir tmp.git-backup.$backup_name.XXXXX)
 
 if [ -z "$(git remote)" ] ; then
   #git gc --aggressive #--prune=today
-  tar cf "${tmp_dir}/${tar_file}" .
-  mv "${tmp_dir}/${tar_file}" "${backup_path}/${tar_file}"
+  tar cf "$tmp_dir/$tar_file" .
+  mv "$tmp_dir/$tar_file" "$backup_path/$tar_file"
   exit 0
 fi
 
@@ -102,18 +102,18 @@ if [ $hooks ] ; then
 fi
 
 if [ $branches ] ; then
-  for branch in `git branch | cut -c 3-` ; do
-    remote=$(git config --get "branch.${branch}.remote") || true
-    merge=$(git config --get "branch.${branch}.merge") || true
+  for branch in $(git branch | cut -c 3-) ; do
+    remote=$(git config --get "branch.$branch.remote") || true
+    merge=$(git config --get "branch.$branch.merge") || true
     merge=${merge##*/}
     remote_branch="master"
-    if [ $remote -a $merge -a "$(git show-ref "${remote}/${merge}")" ] ; then
-      remote_branch="${remote}/${merge}"
+    if [ $remote -a $merge -a "$(git show-ref "$remote/$merge")" ] ; then
+      remote_branch="$remote/$merge"
     fi
-    base=`git merge-base ${branch} ${remote_branch}`
-    if [ "$base" != `git rev-parse ${branch}` ] ; then
+    base=$(git merge-base $branch $remote_branch)
+    if [ "$base" != $(git rev-parse $branch) ] ; then
       mkdir -p "$tmp_dir/$branch"
-      git format-patch --output-directory "${tmp_dir}/${branch}" "${base}..${branch}" >/dev/null
+      git format-patch --output-directory "$tmp_dir/$branch" $base..$branch >/dev/null
     fi
   done
 fi

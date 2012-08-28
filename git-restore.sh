@@ -42,7 +42,7 @@ while [ $# -ne 0 ] ; do
 done
 
 if [ "$usage" ] ; then
-  echo "${usage_text}"
+  echo "$usage_text"
   exit 2
 fi
 
@@ -50,7 +50,7 @@ fi
 ### Script Body
 backup_name=$(basename $backup_file)
 backup_name=${backup_name%%.*}
-backup_path="$(pwd)/${backup_name}"
+backup_path="$(pwd)/$backup_name"
 tmp_dir=$(mktemp --directory --tmpdir tmp.git-backup.$backup_name.XXXXX)
 
 cd "$tmp_dir"
@@ -68,29 +68,29 @@ git clone $remote_url "$backup_path" >/dev/null
 
 current_branch="$(cat .git/HEAD)"
 current_branch=${current_branch##*/}
-cp .git/config "${backup_path}/.git/config"
+cp .git/config "$backup_path/.git/config"
 
-cp .git/hooks/* "${backup_path}/.git/hooks/"
+cp .git/hooks/* "$backup_path/.git/hooks/"
 
 branches=$(ls */[0-9][0-9][0-9][0-9]-*.patch | cut -d/ -f1 | sort -u)
 for branch in $branches ; do
   cd "$backup_path"
-  remote=$(git config --get "branch.${branch}.remote") || true
-  merge=$(git config --get "branch.${branch}.merge") || true
+  remote=$(git config --get "branch.$branch.remote") || true
+  merge=$(git config --get "branch.$branch.merge") || true
   merge=${merge##*/}
   remote_branch="master"
-  if [ $remote -a $merge -a "$(git show-ref "${remote}/${merge}")" ] ; then
-    remote_branch="${remote}/${merge}"
+  if [ $remote -a $merge -a "$(git show-ref "$remote/$merge")" ] ; then
+    remote_branch="$remote/$merge"
   fi
   git checkout -b $branch $remote_branch 2>/dev/null
-  git am ${tmp_dir}/$branch/*.patch >/dev/null
+  git am $tmp_dir/$branch/*.patch >/dev/null
 
   git checkout master 2>/dev/null
   cd "$tmp_dir"
 done
 
 cd "$backup_path"
-git checkout ${current_branch} 2>/dev/null
+git checkout $current_branch 2>/dev/null
 cd "$tmp_dir"
 
 if [ -f cached_changes.patch ] ; then
