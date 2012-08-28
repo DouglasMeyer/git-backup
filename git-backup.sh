@@ -24,7 +24,10 @@ Options:
   --no-untracked (default)
 
   --ignored            - Include ignored files in backup.
-  --no-ignored (default)"
+  --no-ignored (default)
+
+  --staches (default)  - Include stashed changes in backup.
+  --no-staches"
 #TODO: is it possible for --no-default to be specified anywhere?
 
 
@@ -47,6 +50,7 @@ cached=t
 changes=t
 untracked=
 ignored=
+stashes=t
 
 while [ $# -ne 0 ] ; do
   case $1 in
@@ -58,6 +62,7 @@ while [ $# -ne 0 ] ; do
     branches=
     cached=
     changes=
+    stashes=
     ;;
   --config ) shift ; config=t ;;
   --no-config ) shift ; config= ;;
@@ -73,6 +78,8 @@ while [ $# -ne 0 ] ; do
   --no-untracked ) shift ; untracked= ;;
   --ignored ) shift ; ignored=t ;;
   --no-ignored ) shift ; ignored= ;;
+  --stashes ) shift ; stashes=t ;;
+  --no-stashes ) shift ; stashes= ;;
   * )
     echo "Unknown option \"$1\""
     echo
@@ -144,6 +151,12 @@ fi
 
 if [ $ignored ] ; then
   tar cf $tmp_dir/ignored.tar $(git clean --dry-run -d -X | sed "s/^Would remove //")
+fi
+
+if [ $stashes ] ; then
+  for stash in "$(git stash list)" ; do
+    git stash show -p "${stash%%:*}" > $tmp_dir/${stash/\//_}
+  done
 fi
 
 pushd "$tmp_dir" > /dev/null

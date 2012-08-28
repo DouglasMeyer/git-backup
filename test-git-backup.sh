@@ -48,6 +48,7 @@ cd "$test_path"
 mkdir local_project
 cd local_project
 git init >/dev/null
+
 echo "First content" > first_file
 git add first_file
 git commit -m "First commit" >/dev/null
@@ -66,6 +67,9 @@ git checkout -b my_branch &>/dev/null
 echo "A branch" > first_file
 git add first_file
 git commit -m "A branch" >/dev/null
+
+echo "Stash content" > first_file
+git stash save "My stash" >/dev/null
 
 echo "Cached change" > first_file
 git add first_file
@@ -112,6 +116,8 @@ assert $? "$LINENO: cached_changes.patch should not exist"
 assert $? "$LINENO: changes.patch should exist"
 [ ! -f untracked.tar ] ; assert $? "$LINENO: untracked.tar should not exist"
 [ ! -f ignored.tar ] ; assert $? "$LINENO: ignored.tar should not exist"
+cat "stash@{0}: On my_branch: My stash" | grep -q "diff --git a/first_file"
+assert $? "$LINENO: first_file should be stashed"
 
 
 # Test --no-default doesn't incude defaults
@@ -129,6 +135,7 @@ assert $? "$LINENO: cached_changes.patch should not exist"
 assert $? "$LINENO: changes.patch should not exist"
 [ ! -f untracked.tar ] ; assert $? "$LINENO: untracked.tar should not exist"
 [ ! -f ignored.tar ] ; assert $? "$LINENO: ignored.tar should not exist"
+[ ! -f stash@{?}:* ]; assert $? "$LINENO: there should be no stahsed changes"
 
 
 # Test config gets backed-up
@@ -236,3 +243,16 @@ files_equal "$test_path/ignored.tar" "$untar_path/ignored.tar"
 setup
 backup --no-ignored
 [ ! -f ignored.tar ] ; assert $? "$LINENO: ignored.tar should not exist"
+
+
+# Test --stashes should include git stashes
+setup
+backup --stashes
+cat "stash@{0}: On my_branch: My stash" | grep -q "diff --git a/first_file"
+assert $? "$LINENO: first_file should be stashed"
+
+
+# Test --no-stashes should include git stashes
+setup
+backup --no-stashes
+[ ! -f stash@{?}:* ]; assert $? "$LINENO: there should be no stahsed changes"

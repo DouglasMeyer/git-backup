@@ -70,6 +70,9 @@ echo "Branch content" > first_file
 git add first_file
 git commit -m "Branch commit" >/dev/null
 
+echo "Stashed content" > first_file
+git stash save "My stash" >/dev/null
+
 echo "Cached content" > first_file
 git add first_file
 
@@ -133,3 +136,9 @@ assert_equal "" "$(git show untracked_file)"
 # Test ignored files get restored
 assert_equal "Ignore me" "$(cat ./ignore_file)"
 assert_equal "" "$(git show ignore_file)"
+
+# Test stashed changes get restored
+git stash show -p | grep -q "Stashed content"
+assert $? "$LINENO: stashed content should be stashed"
+git stash list | grep -q "stash@{0}: On my_branch: My stash"
+assert $? "$LINENO: stash should have correct name"

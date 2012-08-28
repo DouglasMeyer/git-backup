@@ -89,6 +89,17 @@ for branch in $branches ; do
   cd "$tmp_dir"
 done
 
+for stash in stash@{?}:\ * ; do
+  key=${stash%%:*}
+  branch=$(echo $stash | sed "s/^.*: On \([^:]\+\): .*$/\1/")
+  name=${stash##*: }
+  cd "$backup_path"
+  git checkout $branch 2>/dev/null
+  git apply --index --apply "$tmp_dir/$stash"
+  git stash save "$name" >/dev/null
+  cd "$tmp_dir"
+done
+
 cd "$backup_path"
 git checkout $current_branch 2>/dev/null
 cd "$tmp_dir"
