@@ -104,7 +104,7 @@ tar_file=$backup_name.tar
 tmp_dir=$(mktemp --directory --tmpdir tmp.git-backup.$backup_name.XXXXX)
 
 if [ -z "$(git remote)" ] ; then
-  #git gc --aggressive #--prune=today
+  #git gc --aggressive #--prune=today #TODO: how much space can we save?
   tar cf "$tmp_dir/$tar_file" .
   mv "$tmp_dir/$tar_file" "$backup_path/$tar_file"
   exit 0
