@@ -1,6 +1,5 @@
 #!/bin/sh
-usage_text=<<_END_
-Git Backup, a tool to backup your git projects and not duplicate what is stored remotely.
+usage_text="Git Backup, a tool to backup your git projects and not duplicate what is stored remotely.
 Usage: $0 [options...]
 Options:
 
@@ -14,7 +13,12 @@ Options:
 
   --branches (default) - Include local branches (upto commits stored remotely).
   --no-branches
-_END_
+
+  --cached (default)   - Include cached changes in backup.
+  --no-cached
+
+  --changes (default)  - Include working directory changes in backup.
+  --no-changes"
 #TODO: is it possible for --no-default to be specified anywhere?
 
 
@@ -23,11 +27,7 @@ _END_
         # Exit immediately if a variable isn't defined
 set -e #-u
 on_exit() {
-  status=$?
   rm -rf "$tmp_dir"
-  if [ "$status" -ne 0 ] ; then
-    echo "Something went wrong in $0"
-  fi
 }
 trap on_exit EXIT
 
@@ -37,6 +37,8 @@ usage=
 config=t
 hooks=t
 branches=t
+cached=t
+changes=t
 
 while [ $# -ne 0 ] ; do
   case $1 in
@@ -45,6 +47,9 @@ while [ $# -ne 0 ] ; do
     shift
     config=
     hooks=
+    branches=
+    cached=
+    changes=
     ;;
   --config ) shift ; config=t ;;
   --no-config ) shift ; config= ;;
@@ -52,6 +57,10 @@ while [ $# -ne 0 ] ; do
   --no-hooks ) shift ; hooks= ;;
   --branches ) shift ; branches=t ;;
   --no-branches ) shift ; branches= ;;
+  --cached ) shift ; cached=t ;;
+  --no-cached ) shift ; cached= ;;
+  --changes ) shift ; changes=t ;;
+  --no-changes ) shift ; changes= ;;
   * )
     echo "Unknown option \"$1\""
     echo
@@ -80,8 +89,10 @@ if [ -z "$(git remote)" ] ; then
   exit 0
 fi
 
+mkdir -p "$tmp_dir/.git"
+cp .git/HEAD $tmp_dir/.git/HEAD
+
 if [ $config ] ; then
-  mkdir -p "$tmp_dir/.git"
   cp .git/config "$tmp_dir/.git/"
 fi
 
@@ -105,6 +116,14 @@ if [ $branches ] ; then
       git format-patch --output-directory "${tmp_dir}/${branch}" "${base}..${branch}" >/dev/null
     fi
   done
+fi
+
+if [ $cached ] ; then
+  git diff --cached --binary > "$tmp_dir/cached_changes.patch"
+fi
+
+if [ $changes ] ; then
+  git diff --binary > "$tmp_dir/changes.patch"
 fi
 
 pushd "$tmp_dir" > /dev/null

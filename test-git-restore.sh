@@ -55,12 +55,21 @@ $backup_cmd
 cd "$test_path"
 git clone local_project remote_project >/dev/null
 cd remote_project
+
 git config --add "apply.whitespace" "fix"
+
 echo "# My update script" > .git/hooks/update
 git checkout -b my_branch 2>/dev/null
+
 echo "Branch content" > first_file
 git add first_file
 git commit -m "Branch commit" >/dev/null
+
+echo "Cached content" > first_file
+git add first_file
+
+echo "Working Copy content" > first_file
+
 $backup_cmd
 
 mkdir "$test_path/restore"; cd "$test_path/restore"
@@ -85,6 +94,10 @@ cd "$test_path/restore/remote_project"
 [ -d .git/objects ]; assert $? "$LINENO: .git/objects should exist"
 [ -d .git/refs ];    assert $? "$LINENO: .git/refs should exist"
 
+# Test HEAD should be where we were
+head=$(cat .git/HEAD)
+assert_equal "my_branch" "${head##*/}"
+
 # Test remote should get set
 assert_equal "${test_path}/local_project" "$(git config --get "remote.origin.url")"
 
@@ -95,5 +108,13 @@ assert_equal "fix" "$(git config --get --local "apply.whitespace")"
 assert_equal "# My update script" "$(cat .git/hooks/update)"
 
 # Test branches should get copied
-git checkout my_branch 2>/dev/null; assert $? "$LINENO: by_branch should exist."
-assert_equal "Branch content" "$(cat ./first_file)"
+assert_equal "Branch content" "$(git show my_branch:first_file)"
+
+# Test cached changes should get restored
+git diff --cached | grep -q "Cached content"
+assert $? "$LINENO: expecetd \"Cached content\" to be part of the cache"
+
+# Test working copy changes should get restored
+assert_equal "Working Copy content" "$(cat ./first_file)"
+git diff --cached | grep -v -q "Working Copy content"
+assert $? "$LINENO: expecetd \"Working Copy content\" to be part of the content"

@@ -30,6 +30,9 @@ assert() { # assertion, message
     failures=$(( $failures + 1 ))
   fi
 }
+assert_equal() { # expected, actual
+  [ "$1" == "$2" ]; assert $? "Expected \"$1\" but was \"$2\"."
+}
 files_equal() { # expected, actual
   [ -f "$1" ]
   assert $? "Expected file \"$1\" doesn't exist."
@@ -37,8 +40,7 @@ files_equal() { # expected, actual
   assert $? "Test file \"$2\" doesn't exist."
   expected=$(md5sum "$1" 2>/dev/null | cut -c -32)
   actual=$(md5sum "$2" 2>/dev/null | cut -c -32)
-  [ "$expected" = "$actual" ]
-  assert $? "${2#$test_path/} was not equal to ${1#$test_path/}"
+  assert_equal "$expected" "$actual"
 }
 
 ### Setup
@@ -62,10 +64,15 @@ echo "A branch" > first_file
 git add first_file
 git commit -m "A branch" >/dev/null
 
+echo "Cached change" > first_file
+git add first_file
+
+echo "Working Copy change" > first_file
+
 setup() {
   rm -rf "$untar_path"
-  cd "$test_path/${1-remote}_project"
   mkdir "$untar_path"
+  cd "$test_path/${1-remote}_project"
 }
 backup() {
   $backup_cmd $*
@@ -85,17 +92,19 @@ cd "$test_path"
 files_equal "$test_path/tar_project.tar" "$test_path/local_project.tar"
 
 
-# Test config gets backed-up
+# Test backup incudes defaults
 setup
 backup
-files_equal "$test_path/remote_project/.git/config" "$untar_path/.git/config"
-
-
-# Test --no-config doesn't include config
-setup
-backup --no-config
-[ ! -e "$untar_path/.git/config" ]
+[ -e "$untar_path/.git/config" ]
 assert $? "$LINENO: $untar_path/.git/config should not exist"
+[ -d "$untar_path/.git/hooks" ]
+assert $? "$LINENO: $untar_path/.git/hooks should not exist"
+[ -d "$untar_path/my_branch" ]
+assert $? "$LINENO: $untar_path/my_branch should not exist"
+[ -f cached_changes.patch ]
+assert $? "$LINENO: cached_changes.patch should not exist"
+[ -f changes.patch ]
+assert $? "$LINENO: changes.patch should exist"
 
 
 # Test --no-default doesn't incude defaults
@@ -105,8 +114,25 @@ backup --no-default
 assert $? "$LINENO: $untar_path/.git/config should not exist"
 [ ! -d "$untar_path/.git/hooks" ]
 assert $? "$LINENO: $untar_path/.git/hooks should not exist"
-[ -d "$untar_path/my_branch" ]
-assert $? "$LINENO: $untar_path/my_branch should exist"
+[ ! -d "$untar_path/my_branch" ]
+assert $? "$LINENO: $untar_path/my_branch should not exist"
+[ ! -f cached_changes.patch ]
+assert $? "$LINENO: cached_changes.patch should not exist"
+[ ! -f changes.patch ]
+assert $? "$LINENO: changes.patch should not exist"
+
+
+# Test config gets backed-up
+setup
+backup --config
+files_equal "$test_path/remote_project/.git/config" "$untar_path/.git/config"
+
+
+# Test --no-config doesn't include config
+setup
+backup --no-config
+[ ! -e "$untar_path/.git/config" ]
+assert $? "$LINENO: $untar_path/.git/config should not exist"
 
 
 # Test --hooks includes hooks
@@ -140,3 +166,34 @@ setup
 backup --no-branches
 [ ! -d "$untar_path/my_branch" ]
 assert $? "$LINENO: $untar_path/my_branch should not exist"
+
+
+# Test --cached includes cached changes
+setup
+backup --cached
+[ -f .git/HEAD ]
+assert $? "$LINENO: the HEAD should be tracked"
+assert_equal "ref: refs/heads/my_branch" "$(cat .git/HEAD)"
+cat cached_changes.patch | grep -q "diff --git a/first_file"
+assert $? "$LINENO: first_file should be cached"
+
+
+# Test --no-cached does not include cached changes
+setup
+backup --no-cached
+[ ! -f cached_changes.patch ]
+assert $? "$LINENO: cached_changes.patch should not exist"
+
+
+# Test --changes should include working directory changes
+setup
+backup --changes
+cat changes.patch | grep -q "diff --git a/first_file"
+assert $? "$LINENO: first_file should be cached"
+
+
+# Test --no-changes should not include working directory changes
+setup
+backup --no-changes
+[ ! -f changes.patch ]
+assert $? "$LINENO: changes.patch should not exist"

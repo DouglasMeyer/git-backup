@@ -66,6 +66,8 @@ master_remote=$(git config --get "branch.master.remote")
 remote_url=$(git config --get "remote.$master_remote.url")
 git clone $remote_url "$backup_path" >/dev/null
 
+current_branch="$(cat .git/HEAD)"
+current_branch=${current_branch##*/}
 cp .git/config "${backup_path}/.git/config"
 
 cp .git/hooks/* "${backup_path}/.git/hooks/"
@@ -86,3 +88,19 @@ for branch in $branches ; do
   git checkout master 2>/dev/null
   cd "$tmp_dir"
 done
+
+cd "$backup_path"
+git checkout ${current_branch} 2>/dev/null
+cd "$tmp_dir"
+
+if [ -f cached_changes.patch ] ; then
+  cd "$backup_path"
+  git apply --index --apply "$tmp_dir/cached_changes.patch"
+  cd "$tmp_dir"
+fi
+
+if [ -f changes.patch ] ; then
+  cd "$backup_path"
+  git apply $tmp_dir/changes.patch
+  cd "$tmp_dir"
+fi
