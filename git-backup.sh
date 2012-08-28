@@ -14,6 +14,9 @@ Options:
   --branches (default) - Include local branches (upto commits stored remotely).
   --no-branches
 
+  --staches (default)  - Include stashed changes in backup.
+  --no-staches
+
   --cached (default)   - Include cached changes in backup.
   --no-cached
 
@@ -24,11 +27,10 @@ Options:
   --no-untracked (default)
 
   --ignored            - Include ignored files in backup.
-  --no-ignored (default)
-
-  --staches (default)  - Include stashed changes in backup.
-  --no-staches"
+  --no-ignored (default)"
 #TODO: is it possible for --no-default to be specified anywhere?
+#NOTE: do I want to backup submodule changes? I'm thinking no, because it is
+#      its own git project/directory.
 
 
 ### Script Support
@@ -46,11 +48,11 @@ usage=
 config=t
 hooks=t
 branches=t
+stashes=t
 cached=t
 changes=t
 untracked=
 ignored=
-stashes=t
 
 while [ $# -ne 0 ] ; do
   case $1 in
@@ -60,9 +62,9 @@ while [ $# -ne 0 ] ; do
     config=
     hooks=
     branches=
+    stashes=
     cached=
     changes=
-    stashes=
     ;;
   --config ) shift ; config=t ;;
   --no-config ) shift ; config= ;;
@@ -70,6 +72,8 @@ while [ $# -ne 0 ] ; do
   --no-hooks ) shift ; hooks= ;;
   --branches ) shift ; branches=t ;;
   --no-branches ) shift ; branches= ;;
+  --stashes ) shift ; stashes=t ;;
+  --no-stashes ) shift ; stashes= ;;
   --cached ) shift ; cached=t ;;
   --no-cached ) shift ; cached= ;;
   --changes ) shift ; changes=t ;;
@@ -78,8 +82,6 @@ while [ $# -ne 0 ] ; do
   --no-untracked ) shift ; untracked= ;;
   --ignored ) shift ; ignored=t ;;
   --no-ignored ) shift ; ignored= ;;
-  --stashes ) shift ; stashes=t ;;
-  --no-stashes ) shift ; stashes= ;;
   * )
     echo "Unknown option \"$1\""
     echo
@@ -137,6 +139,12 @@ if [ $branches ] ; then
   done
 fi
 
+if [ $stashes ] ; then
+  for stash in "$(git stash list)" ; do
+    git stash show -p "${stash%%:*}" > $tmp_dir/${stash/\//_}
+  done
+fi
+
 if [ $cached ] ; then
   git diff --cached --binary > "$tmp_dir/cached_changes.patch"
 fi
@@ -151,12 +159,6 @@ fi
 
 if [ $ignored ] ; then
   tar cf $tmp_dir/ignored.tar $(git clean --dry-run -d -X | sed "s/^Would remove //")
-fi
-
-if [ $stashes ] ; then
-  for stash in "$(git stash list)" ; do
-    git stash show -p "${stash%%:*}" > $tmp_dir/${stash/\//_}
-  done
 fi
 
 pushd "$tmp_dir" > /dev/null
