@@ -126,7 +126,6 @@ if [ "$(git rev-parse --is-inside-work-tree 2>/dev/null)" != "true" ] ; then
 fi
 
 if [ -z "$(git remote)" ] ; then
-  #git gc --aggressive #--prune=today #TODO: how much space can we save?
   tar cf "$tmp_dir/project.tar" .
   mv $tmp_dir/project.tar $tar_file
   exit 0

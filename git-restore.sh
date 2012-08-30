@@ -8,13 +8,7 @@ Usage: $0 backup_file [directory]"
         # Exit immediately if a variable isn't defined
 set -e -u
 on_exit() {
-  status=$?
-
   [ -d "$tmp_dir" ] && rm -rf "$tmp_dir"
-
-  if [ "$status" -ne 0 ] ; then
-    echo "Something went wrong in $0"
-  fi
 }
 trap on_exit EXIT
 
