@@ -377,3 +377,10 @@ assert $? "$LINENO: first_file should be stashed"
 setup
 backup --no-stashes
 [ ! -f stash@{?}:* ]; assert $? "$LINENO: there should be no stahsed changes"
+
+
+# Test --stashes shouldn't break if there are no stashes
+setup
+git stash clear
+backup --stashes 2>/dev/null
+assert $? "$LINENO: git-backup shouldn't crash if there is no stash"

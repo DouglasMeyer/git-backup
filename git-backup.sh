@@ -162,7 +162,7 @@ if [ $branches ] ; then
 fi
 
 if [ $stashes ] ; then
-  for stash in "$(git stash list)" ; do
+  git stash list | while read stash ; do
     git stash show -p "${stash%%:*}" > $tmp_dir/${stash/\//_}
   done
 fi
