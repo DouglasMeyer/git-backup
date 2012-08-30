@@ -94,6 +94,7 @@ backup() {
 
 # Test non-remote backup
 setup 'local'
+touch not_tracked #NOTE: this greatly reduces an inconsistent error
 $backup_cmd
 mv "$test_path/local_project/local_project.tar" "$test_path/local_project.tar"
 tar cf "$test_path/tar_project.tar" .
@@ -156,14 +157,76 @@ assert $? "$LINENO: $untar_path/.git/config should exist"
 assert $? "$LINENO: $untar_path/.git/hooks should exist"
 [ -d "$untar_path/my_branch" ]
 assert $? "$LINENO: $untar_path/my_branch should exist"
-[ -f cached_changes.patch ]
+[ -f $untar_path/cached_changes.patch ]
 assert $? "$LINENO: cached_changes.patch should exist"
-[ -f changes.patch ]
+[ -f $untar_path/changes.patch ]
 assert $? "$LINENO: changes.patch should exist"
-[ -f untracked.tar ] ; assert $? "$LINENO: untracked.tar should exist"
-[ -f ignored.tar ] ; assert $? "$LINENO: ignored.tar should exist"
-cat "stash@{0}: On my_branch: My stash" | grep -q "diff --git a/first_file"
+[ -f $untar_path/untracked.tar ] ; assert $? "$LINENO: untracked.tar should exist"
+[ -f $untar_path/ignored.tar ] ; assert $? "$LINENO: ignored.tar should exist"
+cat "$untar_path/stash@{0}: On my_branch: My stash" | grep -q "diff --git a/first_file"
 assert $? "$LINENO: first_file should be stashed"
+
+
+# Test --work-tree should be followed for non-remote backups
+setup 'local'
+cd $test_path
+$backup_cmd --work-tree ./local_project/
+[ -f local_project.tar ] ; assert $? "$LINENO: local_project.tar should exist"
+
+
+# Test --work-tree should be followed for remote backups
+setup
+cd $test_path
+$backup_cmd --all --work-tree ./remote_project/
+[ -f remote_project.tar ] ; assert $? "$LINENO: remote_project.tar should exist"
+cd $untar_path
+tar xvf ../remote_project.tar >/dev/null
+rm ../remote_project.tar
+[ -e "$untar_path/.git/config" ]
+assert $? "$LINENO: $untar_path/.git/config should exist"
+[ -d "$untar_path/.git/hooks" ]
+assert $? "$LINENO: $untar_path/.git/hooks should exist"
+[ -d "$untar_path/my_branch" ]
+assert $? "$LINENO: $untar_path/my_branch should exist"
+[ -f $untar_path/cached_changes.patch ]
+assert $? "$LINENO: cached_changes.patch should exist"
+[ -f $untar_path/changes.patch ]
+assert $? "$LINENO: changes.patch should exist"
+[ -f $untar_path/untracked.tar ] ; assert $? "$LINENO: untracked.tar should exist"
+[ -f $untar_path/ignored.tar ] ; assert $? "$LINENO: ignored.tar should exist"
+cat "$untar_path/stash@{0}: On my_branch: My stash" | grep -q "diff --git a/first_file"
+assert $? "$LINENO: first_file should be stashed"
+
+
+# Test GIT_WORK_TREE should be followed for remote backups
+setup
+cd $test_path
+GIT_WORK_TREE=$test_path/remote_project/ $backup_cmd --all
+[ -f remote_project.tar ] ; assert $? "$LINENO: remote_project.tar should exist"
+cd $untar_path
+tar xvf ../remote_project.tar >/dev/null
+rm ../remote_project.tar
+[ -e "$untar_path/.git/config" ]
+assert $? "$LINENO: $untar_path/.git/config should exist"
+[ -d "$untar_path/.git/hooks" ]
+assert $? "$LINENO: $untar_path/.git/hooks should exist"
+[ -d "$untar_path/my_branch" ]
+assert $? "$LINENO: $untar_path/my_branch should exist"
+[ -f $untar_path/cached_changes.patch ]
+assert $? "$LINENO: cached_changes.patch should exist"
+[ -f $untar_path/changes.patch ]
+assert $? "$LINENO: changes.patch should exist"
+[ -f $untar_path/untracked.tar ] ; assert $? "$LINENO: untracked.tar should exist"
+[ -f $untar_path/ignored.tar ] ; assert $? "$LINENO: ignored.tar should exist"
+cat "$untar_path/stash@{0}: On my_branch: My stash" | grep -q "diff --git a/first_file"
+assert $? "$LINENO: first_file should be stashed"
+
+
+# Test --work-tree should complain if it isn't in a working tree
+cd $test_path
+$backup_cmd >/dev/null
+[ $? -ne 0 ]
+assert $? "$LINENO: git-backup should fail if not in a working tree"
 
 
 # Test config gets backed-up

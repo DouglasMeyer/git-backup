@@ -28,7 +28,10 @@ Options:
   --no-untracked (default)
 
   --ignored            - Include ignored files in backup.
-  --no-ignored (default)"
+  --no-ignored (default)
+
+  --work-tree <path>   - Set the path to the working tree. By default, the
+                         current directory is used, or GIT_WORK_TREE if set."
 
 
 ### Script Support
@@ -51,6 +54,7 @@ cached=
 changes=
 untracked=
 ignored=
+GIT_WORK_TREE=${GIT_WORK_TREE-$(pwd)}
 if [[ $* != *--no-default* ]] ; then
   config=t
   hooks=t
@@ -90,6 +94,10 @@ while [ $# -ne 0 ] ; do
   --no-untracked ) shift ; untracked= ;;
   --ignored ) shift ; ignored=t ;;
   --no-ignored ) shift ; ignored= ;;
+  --work-tree ) shift
+    GIT_WORK_TREE=$1
+    shift
+    ;;
   * )
     echo "Unknown option \"$1\""
     echo
@@ -106,15 +114,21 @@ fi
 
 
 ### Script Body
-backup_path=$(pwd)
-backup_name=$(basename $backup_path)
-tar_file=$backup_name.tar
+GIT_WORK_TREE=$(realpath "$GIT_WORK_TREE")
+backup_name=$(basename $GIT_WORK_TREE)
+tar_file=$(pwd)/$backup_name.tar
 tmp_dir=$(mktemp --directory --tmpdir tmp.git-backup.$backup_name.XXXXX)
+cd $GIT_WORK_TREE
+if [ "$(git rev-parse --is-inside-work-tree 2>/dev/null)" != "true" ] ; then
+  echo "Not a git working tree: '$GIT_WORK_TREE'"
+  echo "$0 must be run in a working tree, or specified with --work-tree"
+  exit 1
+fi
 
 if [ -z "$(git remote)" ] ; then
   #git gc --aggressive #--prune=today #TODO: how much space can we save?
-  tar cf "$tmp_dir/$tar_file" .
-  mv "$tmp_dir/$tar_file" "$backup_path/$tar_file"
+  tar cf "$tmp_dir/project.tar" .
+  mv $tmp_dir/project.tar $tar_file
   exit 0
 fi
 
@@ -181,6 +195,5 @@ if [ $ignored ] ; then
   fi
 fi
 
-pushd "$tmp_dir" > /dev/null
-tar cf "$backup_path/$tar_file" .
-popd > /dev/null
+cd "$tmp_dir"
+tar cf "$tar_file" .

@@ -1,8 +1,6 @@
 #!/bin/sh
-usage_text=<<_END_
-Git Restore, a tool to restore from a backup file (using git backup).
-Usage: $0 backup_file [directory]
-_END_
+usage_text="Git Restore, a tool to restore from a backup file (using git backup).
+Usage: $0 backup_file [directory]"
 
 
 ### Script Support
