@@ -371,6 +371,7 @@ setup
 backup --stashes
 cat "stash@{0}: On my_branch: My stash" | grep -q "diff --git a/first_file"
 assert $? "$LINENO: first_file should be stashed"
+[ -f "stash@{0}:REF_PARENT" ] ; assert $? "$LINENO: stash@{0}:REF_PARENT should exist"
 
 
 # Test --no-stashes should include git stashes

@@ -161,8 +161,13 @@ if [ $branches ] ; then
 fi
 
 if [ $stashes ] ; then
-  git stash list | while read stash ; do
-    git stash show -p "${stash%%:*}" > $tmp_dir/${stash/\//_}
+  git log --format="%H:%gd: %gs" -g refs/stash | while read stash ; do
+    ref_stash=${stash%%:*}
+    stash=${stash#*:}
+    stash_name=${stash/\//_}
+    stash=${stash%%:*}
+    git stash show -p "$stash" > $tmp_dir/$stash_name
+    git rev-parse ${ref_stash}^ > "$tmp_dir/$stash:REF_PARENT"
   done
 fi
 

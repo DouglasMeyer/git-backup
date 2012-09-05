@@ -8,7 +8,9 @@ Usage: $0 backup_file [directory]"
         # Exit immediately if a variable isn't defined
 set -e -u
 on_exit() {
-  [ -d "$tmp_dir" ] && rm -rf "$tmp_dir"
+  if [ -d "$tmp_dir" ] ; then
+    rm -rf "$tmp_dir"
+  fi
 }
 trap on_exit EXIT
 
@@ -83,12 +85,24 @@ done
 
 for stash in stash@{?}:\ * ; do
   key=${stash%%:*}
-  branch=$(echo $stash | sed "s/^.*: On \([^:]\+\): .*$/\1/")
+  parent=$(cat "$tmp_dir/$key:REF_PARENT")
   name=${stash##*: }
+  branch=$(echo $stash | sed "s/^.*: On \([^:]\+\): .*$/\1/")
   cd "$backup_path"
-  git checkout $branch 2>/dev/null
+  branch_rev=$(git rev-parse $branch)
+  if [ "$branch_rev" ] ; then
+    git checkout $branch 2>/dev/null
+    git reset --hard $parent >/dev/null
+  else
+    git checkout -b $branch $parent 2>/dev/null
+  fi
   git apply --index --apply "$tmp_dir/$stash"
   git stash save "$name" >/dev/null
+  if [ "$branch_rev" ] ; then
+    git reset --hard $branch_rev >/dev/null
+  else
+    git branch -d $branch
+  fi
   cd "$tmp_dir"
 done
 
