@@ -56,8 +56,9 @@ git commit -m "First commit" >/dev/null
 cd "$test_path"
 git clone local_project remote_project >/dev/null
 cd remote_project
-echo "Ignore me" > ignore_file
-echo "ignore_file" > .gitignore
+echo "Ignore me" > ignore\ file\ 1
+echo "Ignore me" > ignore\ file\ 2
+echo "ignore\ file\ ?" > .gitignore
 git add .gitignore
 echo "First update" > first_file
 git add first_file
@@ -76,7 +77,8 @@ git add first_file
 
 echo "Working Copy change" > first_file
 
-echo "Not tracked" > not_tracked
+echo "Not tracked" > not\ tracked\ 1
+echo "Not tracked" > not\ tracked\ 2
 
 setup() {
   rm -rf "$untar_path"
@@ -94,7 +96,7 @@ backup() {
 
 # Test non-remote backup
 setup 'local'
-touch not_tracked #NOTE: this greatly reduces an inconsistent error
+touch not\ tracked\ 1 #NOTE: this greatly reduces an inconsistent error
 $backup_cmd
 mv "$test_path/local_project/local_project.tar" "$test_path/local_project.tar"
 tar cf "$test_path/tar_project.tar" .
@@ -326,7 +328,7 @@ assert $? "$LINENO: changes.patch should not exist"
 setup
 backup --untracked
 cd "$test_path/remote_project"
-tar cf untracked.tar not_tracked
+tar cf untracked.tar not\ tracked\ 1 not\ tracked\ 2
 mv untracked.tar ..
 files_equal "$test_path/untracked.tar" "$untar_path/untracked.tar"
 
@@ -339,7 +341,8 @@ backup --no-untracked
 
 # Test untracked.tar doesn't get created if there are no untracked files
 setup
-rm not_tracked
+rm not\ tracked\ 1
+rm not\ tracked\ 2
 backup --untracked
 [ ! -f untracked.tar ] ; assert $? "$LINENO: untracked.tar should not exist"
 
@@ -348,7 +351,7 @@ backup --untracked
 setup
 backup --ignored
 cd "$test_path/remote_project"
-tar cf ignored.tar ignore_file
+tar cf ignored.tar ignore\ file\ 1 ignore\ file\ 2
 mv ignored.tar ..
 files_equal "$test_path/ignored.tar" "$untar_path/ignored.tar"
 
@@ -361,7 +364,7 @@ backup --no-ignored
 
 # Test ignored.tar doesn't get created if there are no ignored files
 setup
-rm ignore_file
+rm ignore\ file\ 1 ignore\ file\ 2
 backup --ignored
 [ ! -f ignored.tar ] ; assert $? "$LINENO: ignored.tar should not exist"
 

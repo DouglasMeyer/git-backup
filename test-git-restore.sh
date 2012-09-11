@@ -73,8 +73,9 @@ until [ $backup -eq 0 -a $restore -eq 0 -o $count -eq 5 ] ; do
   echo "# My update script" > .git/hooks/update
   git checkout -b my_branch 2>/dev/null
 
-  echo "Ignore me" > ignore_file
-  echo "ignore_file" > .gitignore
+  echo "Ignore me" > ignore\ file\ 1
+  echo "Ignore me" > ignore\ file\ 2
+  echo "ignore\ file\ ?" > .gitignore
   git add .gitignore
 
   echo "Pre stash content" > first_file
@@ -93,7 +94,8 @@ until [ $backup -eq 0 -a $restore -eq 0 -o $count -eq 5 ] ; do
 
   echo "Working Copy content" > first_file
 
-  echo "Untracked content" > untracked_file
+  echo "Untracked content" > untracked\ file\ 1
+  echo "Untracked content" > untracked\ file\ 2
 
   cd "$test_path/remote_project"
   $backup_cmd --untracked --ignored
@@ -149,12 +151,12 @@ git diff --cached | grep -v -q "Working Copy content"
 assert $? "$LINENO: expecetd \"Working Copy content\" to be part of the content"
 
 # Test untracked files get restored
-assert_equal "Untracked content" "$(cat ./untracked_file)"
-assert_equal "" "$(git show untracked_file)"
+assert_equal "Untracked content" "$(cat ./untracked\ file\ 1)"
+assert_equal "" "$(git show untracked\ file\ 1)"
 
 # Test ignored files get restored
-assert_equal "Ignore me" "$(cat ./ignore_file)"
-assert_equal "" "$(git show ignore_file)"
+assert_equal "Ignore me" "$(cat ./ignore\ file\ 1)"
+assert_equal "" "$(git show ignore\ file\ 1)"
 
 # Test stashed changes get restored
 git stash show -p | grep -q "Stashed content"

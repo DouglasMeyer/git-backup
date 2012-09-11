@@ -186,17 +186,17 @@ if [ $changes ] ; then
 fi
 
 if [ $untracked ] ; then
-  untracked_files=$(git clean --dry-run -d | sed "s/^Would remove //")
-  if [ $untracked_files ] ; then
-    tar cf $tmp_dir/untracked.tar $untracked_files
-  fi
+  git clean --dry-run -d | \
+    sed "s/^Would remove //" | \
+    xargs --delimiter "\n" --no-run-if-empty \
+    tar cf $tmp_dir/untracked.tar
 fi
 
 if [ $ignored ] ; then
-  ignored_files=$(git clean --dry-run -d -X | sed "s/^Would remove //")
-  if [ $ignored_files ] ; then
-    tar cf $tmp_dir/ignored.tar $ignored_files
-  fi
+  git clean --dry-run -d -X | \
+    sed "s/^Would remove //" | \
+    xargs --delimiter "\n" --no-run-if-empty \
+    tar cf $tmp_dir/ignored.tar
 fi
 
 cd "$tmp_dir"
