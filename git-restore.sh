@@ -72,14 +72,20 @@ for branch in $branches ; do
   remote=$(git config --get "branch.$branch.remote") || true
   merge=$(git config --get "branch.$branch.merge") || true
   merge=${merge##*/}
+  base=$(cat $tmp_dir/$branch/BASE)
   remote_branch="master"
   if [ $remote -a $merge -a "$(git show-ref "$remote/$merge")" ] ; then
     remote_branch="$remote/$merge"
   fi
-  git checkout -b $branch $remote_branch 2>/dev/null
+  if git rev-parse $branch &>/dev/null ; then
+    git checkout $branch 2>/dev/null
+  else
+    git checkout -b $branch $remote_branch 2>/dev/null
+  fi
+  git reset --hard $base >/dev/null
   git am $tmp_dir/$branch/*.patch >/dev/null
 
-  git checkout master 2>/dev/null
+  git checkout master &>/dev/null
   cd "$tmp_dir"
 done
 

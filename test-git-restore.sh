@@ -89,6 +89,13 @@ until [ $backup -eq 0 -a $restore -eq 0 -o $count -eq 5 ] ; do
   git add first_file
   git commit -m "Branch commit" >/dev/null
 
+  git checkout master 2>/dev/null
+  echo "Post-branch content" > first_file
+  git add first_file
+  git commit -m "Post branch commit" >/dev/null
+
+  git checkout my_branch 2>/dev/null
+
   echo "Cached content" > first_file
   git add first_file
 

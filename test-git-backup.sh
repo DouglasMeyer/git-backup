@@ -72,6 +72,13 @@ git commit -m "A branch" >/dev/null
 echo "Stash content" > first_file
 git stash save "My stash" >/dev/null
 
+git checkout master &>/dev/null
+echo "Update" > first_file
+git add first_file
+git commit -m "Second update" >/dev/null
+
+git checkout my_branch 2>/dev/null
+
 echo "Cached change" > first_file
 git add first_file
 
@@ -265,7 +272,10 @@ backup --branches
 assert $? "$LINENO: $untar_path/my_branch should exist"
 mkdir "$untar_path/branch_test"
 cd "$test_path/remote_project"
-git format-patch --output-directory "${untar_path}/branch_test" "master..my_branch" >/dev/null
+base=$(git merge-base master my_branch)
+echo $base > $untar_path/branch_test/BASE
+assert_equal $base $(cat $untar_path/my_branch/BASE)
+git format-patch --output-directory "${untar_path}/branch_test" $base..my_branch >/dev/null
 diff "${untar_path}/branch_test" "$untar_path/my_branch"
 assert $? "$LINENO: $untar_path/my_branch should be the same as ${untar_path}/branch_test"
 

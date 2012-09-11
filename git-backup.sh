@@ -155,6 +155,7 @@ if [ $branches ] ; then
     base=$(git merge-base $branch $remote_branch)
     if [ "$base" != $(git rev-parse $branch) ] ; then
       mkdir -p "$tmp_dir/$branch"
+      echo $base > $tmp_dir/$branch/BASE
       git format-patch --output-directory "$tmp_dir/$branch" $base..$branch >/dev/null
     fi
   done
