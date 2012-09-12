@@ -1,101 +1,17 @@
 #!/bin/sh
 
-backup_cmd=$(pwd)/git-backup.sh
-test_path=$(mktemp --directory --tmpdir tmp.$(basename $0 .sh).XXXXX)
-untar_path="$test_path/output"
-assertions=0
-failures=0
-
-on_exit() {
-  status=$?
-
-  # clean test files
-  rm -rf "$test_path"
-
-  # print counts
-  echo "$assertions assertions, $failures failures."
-  if [ "$status" -ne 0 ] ; then
-    echo "Something went wrong in $0"
-  else
-    [ $failures -eq 0 ]
-    exit $?
-  fi
-}
-trap on_exit EXIT
-
-assert() { # assertion, message
-  assertions=$(( $assertions + 1 ))
-  if [ $1 -ne 0 ] ; then
-    echo "$2"
-    failures=$(( $failures + 1 ))
-  fi
-}
-assert_equal() { # expected, actual
-  [ "$1" == "$2" ]; assert $? "Expected \"$1\" but was \"$2\"."
-}
-files_equal() { # expected, actual
-  [ -f "$1" ]
-  assert $? "Expected file \"$1\" doesn't exist."
-  [ -f "$2" ]
-  assert $? "Test file \"$2\" doesn't exist."
-  expected=$(md5sum "$1" 2>/dev/null | cut -c -32)
-  actual=$(md5sum "$2" 2>/dev/null | cut -c -32)
-  assert_equal "$expected" "$actual"
-}
-
-### Setup
-cd "$test_path"
-mkdir local_project
-cd local_project
-git init >/dev/null
-
-echo "First content" > first_file
-git add first_file
-git commit -m "First commit" >/dev/null
-
-cd "$test_path"
-git clone local_project remote_project >/dev/null
-cd remote_project
-echo "Ignore me" > ignore\ file\ 1
-echo "Ignore me" > ignore\ file\ 2
-echo "ignore\ file\ ?" > .gitignore
-git add .gitignore
-echo "First update" > first_file
-git add first_file
-git commit -m "First update" >/dev/null
-
-git checkout -b my_branch &>/dev/null
-echo "A branch" > first_file
-git add first_file
-git commit -m "A branch" >/dev/null
-
-echo "Stash content" > first_file
-git stash save "My stash" >/dev/null
-
-git checkout master &>/dev/null
-echo "Update" > first_file
-git add first_file
-git commit -m "Second update" >/dev/null
-
-git checkout my_branch 2>/dev/null
-
-echo "Cached change" > first_file
-git add first_file
-
-echo "Working Copy change" > first_file
-
-echo "Not tracked" > not\ tracked\ 1
-echo "Not tracked" > not\ tracked\ 2
+. $(pwd)/test-helper.sh
+untar_path=$test_path/untar
 
 setup() {
-  rm -rf "$untar_path"
-  mkdir "$untar_path"
-  cd "$test_path/${1-remote}_project"
+  rm -rf $untar_path
+  mkdir $untar_path
+  cd $test_path/${1-remote}_project
 }
 backup() {
   $backup_cmd $*
   tar=$(pwd)/$(basename $(pwd)).tar
-  cd "$untar_path"
+  cd $untar_path
   tar xvf $tar >/dev/null
   rm $tar
 }
@@ -108,7 +24,7 @@ $backup_cmd
 mv "$test_path/local_project/local_project.tar" "$test_path/local_project.tar"
 tar cf "$test_path/tar_project.tar" .
 cd "$test_path"
-#NOTE: the odds of this failing is 1/100
+#NOTE: the odds of this failing is 2/100
 files_equal "$test_path/tar_project.tar" "$test_path/local_project.tar"
 
 

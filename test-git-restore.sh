@@ -1,107 +1,17 @@
 #!/bin/bash
 
-backup_cmd=$(pwd)/git-backup.sh
-restore_cmd=$(pwd)/git-restore.sh
-test_path=$(mktemp --directory --tmpdir tmp.$(basename $0 .sh).XXXXX)
-assertions=0
-failures=0
+. $(pwd)/test-helper.sh
 
-on_exit() {
-  status=$?
-
-  rm -rf "$test_path"
-
-  echo "$assertions assertions, $failures failures."
-  if [ "$status" -ne 0 ] ; then
-    echo "Something went wrong in $0"
-  else
-    [ $failures -eq 0 ]
-    exit $?
-  fi
-}
-trap on_exit EXIT
-
-assert() { # assertion, message
-  assertions=$(( $assertions + 1 ))
-  if [ "$1" -ne 0 ] ; then
-    echo "$2"
-    failures=$(( $failures + 1 ))
-  fi
-}
-assert_equal() { # expected, actual
-  [ "$1" == "$2" ]; assert $? "Expected \"$1\" but was \"$2\"."
-}
-files_equal() { # expected, actual
-  [ -f "$1" ]
-  assert $? "Expected file \"$1\" doesn't exist."
-  [ -f "$2" ]
-  assert $? "Test file \"$2\" doesn't exist."
-  expected=$(md5sum "$1" 2>/dev/null | cut -c -32)
-  actual=$(md5sum "$2" 2>/dev/null | cut -c -32)
-  [ "$expected" = "$actual" ]
-  assert $? "${2#$build_path/} was not equal to ${1#$build_path/}"
-}
-
-
-### Setup
-mkdir "$test_path/restore"
-cd "$test_path"
-mkdir local_project; cd local_project
-git init >/dev/null
-echo "First content" > first_file
-git add first_file
-
-git commit -m "First commit" >/dev/null
+cd $test_path/local_project
 $backup_cmd || error "$LINENO: command failed"
-cd "$test_path/restore"
+mkdir $test_path/restore
+cd $test_path/restore
 $restore_cmd ../local_project/local_project.tar || echo "$LINENO: command failed"
 
-
-cd "$test_path"
-git clone local_project remote_project >/dev/null
-cd remote_project
-
-git config --add "apply.whitespace" "fix"
-
-echo "# My update script" > .git/hooks/update
-git checkout -b my_branch 2>/dev/null
-
-echo "Ignore me" > ignore\ file\ 1
-echo "Ignore me" > ignore\ file\ 2
-echo "ignore\ file\ ?" > .gitignore
-git add .gitignore
-
-echo "Pre stash content" > first_file
-git add first_file
-git commit -m "Pre stash commit" >/dev/null
-
-echo "Stashed content" > first_file
-git stash save "My stash" >/dev/null
-
-echo "Branch content" > first_file
-git add first_file
-git commit -m "Branch commit" >/dev/null
-
-git checkout master 2>/dev/null
-echo "Post-branch content" > first_file
-git add first_file
-git commit -m "Post branch commit" >/dev/null
-
-git checkout my_branch 2>/dev/null
-
-echo "Cached content" > first_file
-git add first_file
-
-echo "Working Copy content" > first_file
-
-echo "Untracked content" > untracked\ file\ 1
-echo "Untracked content" > untracked\ file\ 2
-
-cd "$test_path/remote_project"
+cd $test_path/remote_project
 $backup_cmd --untracked --ignored || echo "$LINENO: backup failed"
-cd "$test_path/restore"
+cd $test_path/restore
 $restore_cmd ../remote_project/remote_project.tar || echo "$LINENO: restore failed"
-
 
 ### Tests
 
@@ -146,8 +56,8 @@ git diff --cached | grep -v -q "Working Copy content"
 assert $? "$LINENO: expecetd \"Working Copy content\" to be part of the content"
 
 # Test untracked files get restored
-assert_equal "Untracked content" "$(cat ./untracked\ file\ 1)"
-assert_equal "" "$(git show untracked\ file\ 1)"
+assert_equal "Not tracked content" "$(cat ./not\ tracked\ 1)"
+assert_equal "" "$(git show not\ tracked\ 1)"
 
 # Test ignored files get restored
 assert_equal "Ignore me" "$(cat ./ignore\ file\ 1)"
