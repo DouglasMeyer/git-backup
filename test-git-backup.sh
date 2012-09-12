@@ -108,6 +108,7 @@ $backup_cmd
 mv "$test_path/local_project/local_project.tar" "$test_path/local_project.tar"
 tar cf "$test_path/tar_project.tar" .
 cd "$test_path"
+#NOTE: the odds of this failing is 1/100
 files_equal "$test_path/tar_project.tar" "$test_path/local_project.tar"
 
 

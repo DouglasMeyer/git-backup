@@ -83,7 +83,7 @@ for branch in $branches ; do
     git checkout -b $branch $remote_branch 2>/dev/null
   fi
   git reset --hard $base >/dev/null
-  git am $tmp_dir/$branch/*.patch >/dev/null
+  git am --committer-date-is-author-date $tmp_dir/$branch/*.patch >/dev/null
 
   git checkout master &>/dev/null
   cd "$tmp_dir"
