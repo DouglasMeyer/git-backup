@@ -1,4 +1,6 @@
 #!/bin/sh
+# Copyright (c) 2012, Douglas Meyer
+
 usage_text="Git Restore, a tool to restore from a backup file (using git backup).
 Usage: $0 backup_file"
 

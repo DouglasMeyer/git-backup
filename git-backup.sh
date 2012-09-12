@@ -1,4 +1,6 @@
 #!/bin/sh
+# Copyright (c) 2012, Douglas Meyer
+
 usage_text="Git Backup, a tool to backup your git projects and not duplicate what is stored remotely.
 Usage: $0 [options...]
 Options:
